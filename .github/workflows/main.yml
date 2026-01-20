@@ -21,13 +21,18 @@ jobs:
         run: java --version
         
       - name: Install Zowe CLI
-        run: npm install -g @zowe/cli@latest  
+        run: npm install -g @zowe/cli@latest
+             zowe --version
       
       - name: Setup Mainframe Environment and Upload COBOL Check
         env:
+          ZOWE_OPT_HOST: 204.90.115.200
+          ZOWE_OPT_PORT: 10443
+          ZOWE_OPT_USER: ${{ secrets.ZOWE_USERNAME }}
+          ZOWE_OPT_PASSWORD: ${{ secrets.ZOWE_PASSWORD }}
+          ZOWE_OPT_REJECT_UNAUTHORIZED: false 
           ZOWE_USERNAME: ${{ secrets.ZOWE_USERNAME }}
           ZOWE_PASSWORD: ${{ secrets.ZOWE_PASSWORD }}
         run: |
-          # Here we'll add our commands to run cobolcheck
-          echo "Running COBOL Check"
-          # Add actual cobolcheck commands here
+          chmod +x .github/scripts/zowe_operations.sh
+          .github/scripts/zowe_operations.sh
