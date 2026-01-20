@@ -51,6 +51,6 @@ fi
 }
 # Run for each program
 for program in NUMBERS EMPPAY DEPTPAY; do
-  run_cobol-check $program
+  run_cobolcheck $program
 done
 echo "Mainframe operations completed"
