@@ -30,3 +30,11 @@ jobs:
           echo ""
           echo ". github/scripts directory contents:"
           ls -la .github/scripts/ || echo "Directory does not exist!"
+          
+      - name: Setup Mainframe Environment and Upload COBOL Check
+        env:
+          ZOWE_USERNAME: ${{ secrets.ZOWE_USERNAME }}
+          ZOWE_PASSWORD: ${{ secrets.ZOWE_PASSWORD }}
+        run: |
+          chmod +x .github/scripts/zowe_operations.sh
+          .github/scripts/zowe_operations.sh          
