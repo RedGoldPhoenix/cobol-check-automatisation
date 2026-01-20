@@ -25,10 +25,10 @@ jobs:
           echo "Repository root contents:"
           ls -la
           echo ""
-          echo ". github directory contents:"
+          echo ".github directory contents:"
           ls -la .github/
           echo ""
-          echo ". github/scripts directory contents:"
+          echo ".github/scripts directory contents:"
           ls -la .github/scripts/ || echo "Directory does not exist!"
           
       - name: Setup Mainframe Environment and Upload COBOL Check
@@ -36,5 +36,5 @@ jobs:
           ZOWE_USERNAME: ${{ secrets.ZOWE_USERNAME }}
           ZOWE_PASSWORD: ${{ secrets.ZOWE_PASSWORD }}
         run: |
-          chmod +x ".github/scripts/zowe_operations.sh"
+          chmod +x .github/scripts/zowe_operations.sh
           .github/scripts/zowe_operations.sh          
