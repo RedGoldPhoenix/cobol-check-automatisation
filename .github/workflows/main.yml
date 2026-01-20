@@ -1,0 +1,29 @@
+name: COBOL Check Automation
+
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  cobol-check:
+    runs-on: ubuntu-latest  # GitHub Actions n'a pas de runner fedora-latest officiel
+    
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Set up Java 21
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+      
+      - name: Verify Java installation
+        run: java --version
+      
+      - name: Run COBOL Check
+        env:
+          ZOWE_USERNAME: ${{ secrets.ZOWE_USERNAME }}
+          ZOWE_PASSWORD: ${{ secrets.ZOWE_PASSWORD }}
+        run: |
+          echo "Running COBOL Check"
+          # Add actual cobolcheck commands here
