@@ -8,26 +8,26 @@ export PATH=$PATH:/usr/lpp/zowe/cli/node/bin
 java -version
 # Set ZOWE_USERNAME
 ZOWE_USERNAME="Z15007" # Replace with the actual username
-# Change to the cobolcheck directory
-cd cobolcheck
+# Change to the cobol-check directory
+cd cobol-check
 echo "Changed to $(pwd)"
 ls -al
-# Make cobolcheck executable
-chmod +x cobolcheck
-echo "Made cobolcheck executable"
+# Make cobol-check executable
+chmod +x cobol-check
+echo "Made cobol-check executable"
 # Make script in scripts directory executable
 cd scripts
 chmod +x linux_gnucobol_run_tests
 echo "Made linux_gnucobol_run_tests executable"
 cd ..
-# Function to run cobolcheck and copy files
-un_cobolcheck() {
+# Function to run cobol-check and copy files
+un_cobol-check() {
 program=$1
-echo "Running cobolcheck for $program"
-# Run cobolcheck, but don't exit if it fails
-./cobolcheck -p $program
-echo "Cobolcheck execution completed for $program (exceptions may have occurred)"
-# Check if CC##99.CBL was created, regardless of cobolcheck exit status
+echo "Running cobol-check for $program"
+# Run cobol-check, but don't exit if it fails
+./cobol-check -p $program
+echo "cobol-check execution completed for $program (exceptions may have occurred)"
+# Check if CC##99.CBL was created, regardless of cobol-check exit status
 if [ -f "CC##99.CBL" ]; then
   # Copy to the MVS dataset
   if cp CC##99.CBL "//'${ZOWE_USERNAME}.CBL($program)'"; then
@@ -51,6 +51,6 @@ fi
 }
 # Run for each program
 for program in NUMBERS EMPPAY DEPTPAY; do
-  run_cobolcheck $program
+  run_cobol-check $program
 done
 echo "Mainframe operations completed"
