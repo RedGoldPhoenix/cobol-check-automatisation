@@ -21,7 +21,7 @@ chmod +x linux_gnucobol_run_tests
 echo "Made linux_gnucobol_run_tests executable"
 cd ..
 # Function to run cobol-check and copy files
-un_cobol-check() {
+run_cobol-check() {
 program=$1
 echo "Running cobol-check for $program"
 # Run cobol-check, but don't exit if it fails
