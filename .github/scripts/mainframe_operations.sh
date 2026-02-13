@@ -15,9 +15,9 @@ pwd
 cd cobol-check
 echo "Changed to $(pwd)"
 ls -al
-# Make cobol-check executable
-chmod +x cobol-check
-echo "Made cobol-check executable"
+# cobol-check is a JAR file, not an executable script
+# We'll call it via java -jar
+echo "cobol-check JAR found in bin/ directory"
 # Make script in scripts directory executable
 cd scripts
 chmod +x linux_gnucobol_run_tests
