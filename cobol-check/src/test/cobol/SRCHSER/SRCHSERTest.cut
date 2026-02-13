@@ -1,0 +1,121 @@
+      *=============================================================
+      * TEST SUITE: SRCHSER - Account Search Program
+      *=============================================================
+      * Ce programme lit un fichier, charge les donnees dans une
+      * table, puis fait un SEARCH ALL pour trouver le compte
+      * 18011809.
+      *
+      * COBOL Check stube automatiquement les verbes I/O :
+      *   OPEN, CLOSE, READ, WRITE sont remplaces par des stubs.
+      *   Le READ ne lit donc RIEN. Il faut MOCKER READ-RECORD
+      *   pour simuler la lecture de donnees.
+      *
+      * SYNTAXE DES MOCKS:
+      *   MOCK PARAGRAPH nom-paragraphe
+      *     ... instructions COBOL ...
+      *   END-MOCK
+      *
+      *   MOCK SECTION nom-section
+      *     ... instructions COBOL ...
+      *   END-MOCK
+      *=============================================================
+
+       TestSuite "Test SRCHSER - Account Search Program"
+
+      *-------------------------------------------------------------
+      * TESTS D'INITIALISATION DES VARIABLES
+      * Verifie que les variables ont leurs valeurs par defaut
+      *-------------------------------------------------------------
+
+       TestCase "LASTREC should be space initially"
+           Expect LASTREC = SPACE
+
+       TestCase "TABLE-MAX should be 45"
+           Expect TABLE-MAX = 45
+
+       TestCase "END-OF-FILE should not be true initially"
+           Expect END-OF-FILE TO BE FALSE
+
+      *-------------------------------------------------------------
+      * TESTS DE MANIPULATION DE LA TABLE
+      * Verifie que les donnees sont correctement stockees
+      *-------------------------------------------------------------
+
+       TestCase "Account number stored correctly in table"
+           MOVE '18011809' TO ACCT-NO(1)
+           Expect ACCT-NO(1) = '18011809'
+
+       TestCase "Last name stored correctly in table"
+           MOVE 'DOE                 ' TO LAST-NAME(1)
+           Expect LAST-NAME(1) = 'DOE                 '
+
+       TestCase "First name stored correctly in table"
+           MOVE 'JOHN           ' TO FIRST-NAME(1)
+           Expect FIRST-NAME(1) = 'JOHN           '
+
+       TestCase "Multiple accounts can be loaded"
+           MOVE '10011001' TO ACCT-NO(1)
+           MOVE '18011809' TO ACCT-NO(2)
+           MOVE '20012001' TO ACCT-NO(3)
+           Expect ACCT-NO(1) = '10011001'
+           Expect ACCT-NO(2) = '18011809'
+           Expect ACCT-NO(3) = '20012001'
+
+      *-------------------------------------------------------------
+      * TESTS DES FLAGS ET CONDITIONS 88
+      * Verifie le fonctionnement du flag END-OF-FILE
+      *-------------------------------------------------------------
+
+       TestCase "Setting LASTREC to Y triggers END-OF-FILE"
+           MOVE 'Y' TO LASTREC
+           Expect END-OF-FILE TO BE TRUE
+
+       TestCase "LASTREC reset to space clears END-OF-FILE"
+           MOVE SPACE TO LASTREC
+           Expect END-OF-FILE TO BE FALSE
+
+      *-------------------------------------------------------------
+      * TESTS AVEC MOCK DU PARAGRAPHE READ-RECORD
+      *
+      * EXPLICATION DU MOCK:
+      *   COBOL Check stube le verbe READ (il ne fait rien).
+      *   On doit mocker le paragraphe READ-RECORD pour simuler
+      *   la lecture de donnees depuis le fichier.
+      *
+      *   Le mock REMPLACE completement le contenu du paragraphe.
+      *   Quand le test appelle PERFORM READ-RECORD, c'est le
+      *   code du mock qui s'execute, PAS le READ original.
+      *-------------------------------------------------------------
+
+       TestCase "Mock READ-RECORD sets END-OF-FILE"
+           MOCK PARAGRAPH READ-RECORD
+              MOVE 'Y' TO LASTREC
+           END-MOCK
+           PERFORM READ-RECORD
+           Expect LASTREC = 'Y'
+           Expect END-OF-FILE TO BE TRUE
+
+       TestCase "Mock READ-RECORD provides account data"
+           MOCK PARAGRAPH READ-RECORD
+              MOVE '18011809' TO ACCT-NO(1)
+              MOVE 'DOE                 ' TO LAST-NAME(1)
+              MOVE 'JOHN           ' TO FIRST-NAME(1)
+              MOVE 'Y' TO LASTREC
+           END-MOCK
+           PERFORM READ-RECORD
+           Expect ACCT-NO(1) = '18011809'
+           Expect LAST-NAME(1) = 'DOE                 '
+           Expect END-OF-FILE TO BE TRUE
+
+      *-------------------------------------------------------------
+      * TESTS NEGATIFS (should fail)
+      * Verifie que les assertions detectent les erreurs
+      *-------------------------------------------------------------
+
+       TestCase "Wrong account number detected (should fail)"
+           MOVE '18011809' TO ACCT-NO(1)
+           Expect ACCT-NO(1) = '99999999'
+
+       TestCase "Wrong last name detected (should fail)"
+           MOVE 'DOE                 ' TO LAST-NAME(1)
+           Expect LAST-NAME(1) = 'SMITH               '

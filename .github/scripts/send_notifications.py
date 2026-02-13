@@ -228,7 +228,7 @@ def parse_test_results(results_dir):
     """Parse test results from files"""
     programs_data = {}
 
-    for program in ["NUMBERS", "EMPPAY", "DEPTPAY"]:
+    for program in ["NUMBERS", "EMPPAY", "DEPTPAY", "SRCHSER"]:
         results_file = Path(results_dir) / f"{program}_results.txt"
         if results_file.exists():
             with open(results_file, 'r') as f:

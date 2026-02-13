@@ -221,7 +221,7 @@ def main():
 
     # Parse current results
     programs_data = {}
-    for program in ["NUMBERS", "EMPPAY", "DEPTPAY"]:
+    for program in ["NUMBERS", "EMPPAY", "DEPTPAY", "SRCHSER"]:
         results_file = results_dir / f"{program}_results.txt"
         if results_file.exists():
             with open(results_file, 'r') as f:

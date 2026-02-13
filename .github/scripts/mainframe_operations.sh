@@ -205,7 +205,7 @@ fi
 }
 
 # Run for each program (only those that exist)
-for program in NUMBERS EMPPAY DEPTPAY; do
+for program in NUMBERS EMPPAY DEPTPAY SRCHSER; do
   run_cobolcheck $program
 done
 
@@ -226,7 +226,7 @@ total_all_tests=0
 total_all_passed=0
 total_all_failed=0
 
-for program in NUMBERS EMPPAY DEPTPAY; do
+for program in NUMBERS EMPPAY DEPTPAY SRCHSER; do
   if [ -f "../test-results/${program}_results.txt" ]; then
     echo "" >> ../test-results/SUMMARY.txt
     cat "../test-results/${program}_results.txt" >> ../test-results/SUMMARY.txt
