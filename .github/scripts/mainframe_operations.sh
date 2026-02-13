@@ -24,11 +24,11 @@ chmod +x linux_gnucobol_run_tests
 echo "Made linux_gnucobol_run_tests executable"
 cd ..
 # Function to run cobol-check and copy files
-run_cobol-check() {
+run_cobolcheck() {
 program=$1
 echo "Running cobol-check for $program"
 # Run cobol-check, but don't exit if it fails
-./cobol-check -p $program
+java -jar bin/cobol-check-0.2.19.jar -p $program
 echo "cobol-check execution completed for $program (exceptions may have occurred)"
 # Check if CC##99.CBL was created, regardless of cobol-check exit status
 if [ -f "CC##99.CBL" ]; then
@@ -54,6 +54,6 @@ fi
 }
 # Run for each program
 for program in NUMBERS EMPPAY DEPTPAY; do
-  run_cobol-check $program
+  run_cobolcheck $program
 done
 echo "Mainframe operations completed"
