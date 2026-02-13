@@ -123,13 +123,13 @@ submit_and_monitor_jcl() {
       sleep 10
       attempt=$((attempt + 1))
 
-      # Check job status
-      local job_status=$(zowe jobs view job "$job_id" --rff status --rft string 2>&1)
+      # Check job status using correct Zowe command
+      local job_status=$(zowe jobs view job-status-by-jobid "$job_id" --rff status --rft string 2>&1)
 
       if [ $? -eq 0 ]; then
         echo "Job status: $job_status (attempt $attempt/$max_attempts)"
 
-        # Check if job has completed (status would be something like "OUTPUT" or similar)
+        # Check if job has completed (status would be something like "OUTPUT" or similar, not "ACTIVE")
         if [[ "$job_status" != "ACTIVE" && "$job_status" != "" ]]; then
           job_complete=true
           echo "Job $job_id completed with status: $job_status"
@@ -138,11 +138,11 @@ submit_and_monitor_jcl() {
       fi
     done
 
-    if [ "$job_complete" = true ]; then
-      # Retrieve SYSOUT
+    if [ "$job_complete" = true ] || [ $attempt -ge $max_attempts ]; then
+      # Retrieve SYSOUT using correct Zowe command
       local sysout_file="../test-results/${program}_${job_id}.sysout"
       echo "Retrieving SYSOUT..."
-      if zowe jobs view output "$job_id" > "$sysout_file" 2>&1; then
+      if zowe jobs view all-spool-content "$job_id" > "$sysout_file" 2>&1; then
         echo "SYSOUT retrieved and saved to $sysout_file"
 
         # Display relevant portions of SYSOUT
@@ -154,17 +154,14 @@ submit_and_monitor_jcl() {
         parse_test_results "$sysout_file" "$program"
       else
         echo "Failed to retrieve SYSOUT for job $job_id"
+        # Still try to parse if file exists (might have partial content)
+        if [ -f "$sysout_file" ]; then
+          parse_test_results "$sysout_file" "$program"
+        fi
         return 1
       fi
     else
       echo "Job $job_id did not complete within 5 minute timeout period"
-      # Still try to retrieve SYSOUT even if job might still be running
-      local sysout_file="../test-results/${program}_${job_id}.sysout"
-      echo "Attempting to retrieve partial SYSOUT..."
-      if zowe jobs view output "$job_id" > "$sysout_file" 2>&1; then
-        echo "Partial SYSOUT retrieved. Job may still be running."
-        parse_test_results "$sysout_file" "$program"
-      fi
       return 1
     fi
   else
