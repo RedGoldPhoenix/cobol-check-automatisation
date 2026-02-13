@@ -9,12 +9,12 @@ java -version
 # Set ZOWE_USERNAME
 ZOWE_USERNAME="Z15007" # Replace with the actual username
 # Change to the cobol-check directory
-cd cobolcheck
+cd cobol-check
 echo "Changed to $(pwd)"
 ls -al
 # Make cobol-check executable
-chmod +x cobolcheck
-echo "Made cobolcheck executable"
+chmod +x cobol-check
+echo "Made cobol-check executable"
 # Make script in scripts directory executable
 cd scripts
 chmod +x linux_gnucobol_run_tests
@@ -25,7 +25,7 @@ run_cobol-check() {
 program=$1
 echo "Running cobol-check for $program"
 # Run cobol-check, but don't exit if it fails
-./cobolcheck -p $program
+./cobol-check -p $program
 echo "cobol-check execution completed for $program (exceptions may have occurred)"
 # Check if CC##99.CBL was created, regardless of cobol-check exit status
 if [ -f "CC##99.CBL" ]; then
