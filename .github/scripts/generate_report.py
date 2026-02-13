@@ -52,14 +52,17 @@ def calculate_totals(programs_data):
     total_passed = sum(p['passed'] for p in programs_data.values())
     total_failed = sum(p['failed'] for p in programs_data.values())
     avg_coverage = sum(p['coverage'] for p in programs_data.values()) / len(programs_data) if programs_data else 0
-    avg_quality = sum(p['quality_score'] for p in programs_data.values()) / len(programs_data) if programs_data else 0
+
+    # Quality Score = (total_passed / total_tests) * 100
+    # NOT an average of individual quality scores
+    overall_quality = (total_passed / total_tests * 100) if total_tests > 0 else 0
 
     return {
         'total_tests': total_tests,
         'total_passed': total_passed,
         'total_failed': total_failed,
         'overall_coverage': int(avg_coverage),
-        'overall_quality': int(avg_quality),
+        'overall_quality': int(overall_quality),
     }
 
 def generate_html_report(programs_data, totals, output_file):

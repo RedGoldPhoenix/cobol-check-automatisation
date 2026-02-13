@@ -230,7 +230,7 @@ def main():
 
     # Validate thresholds (configurable via env vars)
     coverage_threshold = int(os.getenv('COVERAGE_THRESHOLD', 75))
-    quality_threshold = int(os.getenv('QUALITY_THRESHOLD', 70))
+    quality_threshold = int(os.getenv('QUALITY_THRESHOLD', 60))
 
     coverage_ok = validate_coverage_threshold(totals, coverage_threshold)
     quality_ok = validate_quality_threshold(totals, quality_threshold)

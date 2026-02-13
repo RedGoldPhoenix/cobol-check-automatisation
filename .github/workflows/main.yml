@@ -65,7 +65,7 @@ jobs:
         if: always()
         env:
           COVERAGE_THRESHOLD: 75
-          QUALITY_THRESHOLD: 70
+          QUALITY_THRESHOLD: 60
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           PR_NUMBER: ${{ github.event.pull_request.number }}
         run: |

@@ -248,6 +248,7 @@ for program in NUMBERS EMPPAY DEPTPAY; do
 done
 
 # Calculate overall quality score
+# Quality = (passed tests / total tests) * 100
 overall_quality=0
 if [ "$total_all_tests" -gt 0 ]; then
   overall_quality=$(( (total_all_passed * 100) / total_all_tests ))
