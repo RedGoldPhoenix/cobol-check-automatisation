@@ -32,8 +32,8 @@ java -jar bin/cobol-check-0.2.19.jar -p $program
 echo "cobol-check execution completed for $program (exceptions may have occurred)"
 # Check if CC##99.CBL was created in testruns/, regardless of cobol-check exit status
 if [ -f "testruns/CC##99.CBL" ]; then
-  # Copy to the MVS dataset
-  if cp testruns/CC##99.CBL "//'${ZOWE_USERNAME}.CBL($program)'"; then
+  # Copy to the MVS dataset using Zowe CLI
+  if zowe zos-files upload file-to-data-set "testruns/CC##99.CBL" "${ZOWE_USERNAME}.CBL($program)"; then
     echo "Copied testruns/CC##99.CBL to ${ZOWE_USERNAME}.CBL($program)"
   else
     echo "Failed to copy testruns/CC##99.CBL to ${ZOWE_USERNAME}.CBL($program)"
@@ -43,7 +43,7 @@ else
 fi
 # Copy the JCL file if it exists
 if [ -f "${program}.JCL" ]; then
-  if cp ${program}.JCL "//'${ZOWE_USERNAME}.JCL($program)'"; then
+  if zowe zos-files upload file-to-data-set "${program}.JCL" "${ZOWE_USERNAME}.JCL($program)"; then
     echo "Copied ${program}.JCL to ${ZOWE_USERNAME}.JCL($program)"
   else
     echo "Failed to copy ${program}.JCL to ${ZOWE_USERNAME}.JCL($program)"
