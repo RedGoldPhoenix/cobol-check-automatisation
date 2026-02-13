@@ -1,0 +1,332 @@
+#!/usr/bin/env python3
+"""
+Notification System for Test Results
+Sends notifications to Slack, email, and other channels
+"""
+
+import json
+import os
+import sys
+import re
+from pathlib import Path
+from datetime import datetime
+import urllib.request
+import urllib.error
+
+
+def send_slack_notification(webhook_url, programs_data, totals):
+    """Send notification to Slack"""
+
+    # Build Slack message
+    message = {
+        "username": "COBOL Check Bot",
+        "icon_emoji": ":robot_face:",
+        "attachments": [
+            {
+                "color": "#36a64f" if totals['overall_coverage'] >= 80 else "#ff9900",
+                "title": "COBOL Check Test Results",
+                "text": f"Test execution completed for {', '.join(programs_data.keys())}",
+                "fields": [
+                    {
+                        "title": "Total Tests",
+                        "value": str(totals['total_tests']),
+                        "short": True
+                    },
+                    {
+                        "title": "Passed",
+                        "value": str(totals['total_passed']),
+                        "short": True
+                    },
+                    {
+                        "title": "Code Coverage",
+                        "value": f"{totals['overall_coverage']}%",
+                        "short": True
+                    },
+                    {
+                        "title": "Quality Score",
+                        "value": f"{totals['overall_quality']}%",
+                        "short": True
+                    }
+                ],
+                "footer": "COBOL Check Automation",
+                "ts": int(datetime.now().timestamp())
+            }
+        ]
+    }
+
+    # Add program details
+    programs_text = "\n".join([
+        f"• {prog}: {data['passed']}/{data['total_tests']} passed ({data['coverage']}% coverage)"
+        for prog, data in programs_data.items()
+    ])
+
+    message["attachments"][0]["fields"].append({
+        "title": "Program Results",
+        "value": programs_text,
+        "short": False
+    })
+
+    try:
+        data = json.dumps(message).encode('utf-8')
+        req = urllib.request.Request(webhook_url, data=data)
+        req.add_header('Content-Type', 'application/json')
+
+        with urllib.request.urlopen(req) as response:
+            if response.status == 200:
+                print("✅ Slack notification sent successfully")
+                return True
+            else:
+                print(f"❌ Failed to send Slack notification: {response.status}")
+                return False
+
+    except urllib.error.URLError as e:
+        print(f"❌ Failed to send Slack notification: {e}")
+        return False
+    except Exception as e:
+        print(f"❌ Unexpected error sending Slack notification: {e}")
+        return False
+
+
+def send_email_notification(smtp_config, programs_data, totals, results_dir):
+    """Send email notification"""
+    try:
+        import smtplib
+        from email.mime.text import MIMEText
+        from email.mime.multipart import MIMEMultipart
+
+        # Build email content
+        html_content = f"""
+        <html>
+            <body style="font-family: Arial, sans-serif;">
+                <h2>COBOL Check Test Results</h2>
+                <p>Test execution completed on {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}</p>
+
+                <h3>Summary Metrics</h3>
+                <ul>
+                    <li><strong>Total Tests:</strong> {totals['total_tests']}</li>
+                    <li><strong>Passed:</strong> {totals['total_passed']}</li>
+                    <li><strong>Failed:</strong> {totals['total_failed']}</li>
+                    <li><strong>Code Coverage:</strong> {totals['overall_coverage']}%</li>
+                    <li><strong>Quality Score:</strong> {totals['overall_quality']}%</li>
+                </ul>
+
+                <h3>Program Results</h3>
+                <table border="1" cellpadding="10" style="border-collapse: collapse;">
+                    <tr style="background: #667eea; color: white;">
+                        <th>Program</th>
+                        <th>Tests</th>
+                        <th>Passed</th>
+                        <th>Coverage</th>
+                        <th>Quality</th>
+                    </tr>
+        """
+
+        for prog, data in programs_data.items():
+            html_content += f"""
+                    <tr>
+                        <td>{prog}</td>
+                        <td>{data['total_tests']}</td>
+                        <td>{data['passed']}</td>
+                        <td>{data['coverage']}%</td>
+                        <td>{data['quality_score']}%</td>
+                    </tr>
+            """
+
+        html_content += """
+                </table>
+                <p style="margin-top: 20px; color: #999; font-size: 0.9em;">
+                    Generated by COBOL Check Automation System
+                </p>
+            </body>
+        </html>
+        """
+
+        # Send email
+        msg = MIMEMultipart('alternative')
+        msg['Subject'] = f"COBOL Check Test Results - {datetime.now().strftime('%Y-%m-%d %H:%M')}"
+        msg['From'] = smtp_config.get('from_address', 'cobol-check@example.com')
+        msg['To'] = ', '.join(smtp_config.get('to_address', []))
+
+        msg.attach(MIMEText(html_content, 'html'))
+
+        server = smtplib.SMTP(smtp_config['host'], smtp_config['port'])
+        if smtp_config.get('use_tls'):
+            server.starttls()
+
+        if smtp_config.get('username') and smtp_config.get('password'):
+            server.login(smtp_config['username'], smtp_config['password'])
+
+        server.sendmail(
+            smtp_config.get('from_address'),
+            smtp_config.get('to_address', []),
+            msg.as_string()
+        )
+        server.quit()
+
+        print("✅ Email notification sent successfully")
+        return True
+
+    except Exception as e:
+        print(f"❌ Failed to send email notification: {e}")
+        return False
+
+
+def send_teams_notification(webhook_url, programs_data, totals):
+    """Send notification to Microsoft Teams"""
+
+    message = {
+        "@type": "MessageCard",
+        "@context": "https://schema.org/extensions",
+        "summary": "COBOL Check Test Results",
+        "themeColor": "0078D4",
+        "sections": [
+            {
+                "activityTitle": "COBOL Check Test Results",
+                "activitySubtitle": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                "facts": [
+                    {
+                        "name": "Total Tests",
+                        "value": str(totals['total_tests'])
+                    },
+                    {
+                        "name": "Passed",
+                        "value": str(totals['total_passed'])
+                    },
+                    {
+                        "name": "Code Coverage",
+                        "value": f"{totals['overall_coverage']}%"
+                    },
+                    {
+                        "name": "Quality Score",
+                        "value": f"{totals['overall_quality']}%"
+                    }
+                ],
+                "markdown": True
+            }
+        ]
+    }
+
+    try:
+        data = json.dumps(message).encode('utf-8')
+        req = urllib.request.Request(webhook_url, data=data)
+        req.add_header('Content-Type', 'application/json')
+
+        with urllib.request.urlopen(req) as response:
+            if response.status == 200:
+                print("✅ Teams notification sent successfully")
+                return True
+            else:
+                print(f"❌ Failed to send Teams notification: {response.status}")
+                return False
+
+    except Exception as e:
+        print(f"❌ Failed to send Teams notification: {e}")
+        return False
+
+
+def parse_test_results(results_dir):
+    """Parse test results from files"""
+    programs_data = {}
+
+    for program in ["NUMBERS", "EMPPAY", "DEPTPAY"]:
+        results_file = Path(results_dir) / f"{program}_results.txt"
+        if results_file.exists():
+            with open(results_file, 'r') as f:
+                content = f.read()
+
+                def extract_metric(text, pattern):
+                    match = re.search(pattern + r':\s*(\d+)', text)
+                    return int(match.group(1)) if match else 0
+
+                programs_data[program] = {
+                    'total_tests': extract_metric(content, 'Total Test Cases'),
+                    'passed': extract_metric(content, 'Tests Passed'),
+                    'coverage': extract_metric(content, 'Code Coverage'),
+                    'quality_score': extract_metric(content, 'Test Quality Score'),
+                }
+
+    return programs_data
+
+
+def parse_summary(results_dir):
+    """Parse summary metrics"""
+    summary_file = Path(results_dir) / "SUMMARY.txt"
+
+    if not summary_file.exists():
+        return None
+
+    with open(summary_file, 'r') as f:
+        content = f.read()
+
+    def extract_metric(text, pattern):
+        match = re.search(pattern + r':\s*(\d+)', text)
+        return int(match.group(1)) if match else 0
+
+    totals = {
+        'total_tests': extract_metric(content, 'Total Test Cases Executed'),
+        'total_passed': extract_metric(content, 'Total Tests Passed'),
+        'total_failed': extract_metric(content, 'Total Tests Failed'),
+        'overall_coverage': extract_metric(content, 'Overall Code Coverage'),
+        'overall_quality': extract_metric(content, 'Overall Test Quality'),
+    }
+
+    return totals
+
+
+def main():
+    if len(sys.argv) < 2:
+        results_dir = "../test-results"
+    else:
+        results_dir = sys.argv[1]
+
+    results_dir = Path(results_dir)
+
+    if not results_dir.exists():
+        print(f"❌ Results directory not found: {results_dir}")
+        return 1
+
+    # Parse results
+    programs_data = parse_test_results(results_dir)
+    totals = parse_summary(results_dir)
+
+    if not programs_data or not totals:
+        print("❌ No test results found")
+        return 1
+
+    print("📧 Sending notifications...\n")
+
+    # Send Slack notification
+    slack_webhook = os.getenv('SLACK_WEBHOOK_URL')
+    if slack_webhook:
+        send_slack_notification(slack_webhook, programs_data, totals)
+    else:
+        print("ℹ️  SLACK_WEBHOOK_URL not configured")
+
+    # Send Teams notification
+    teams_webhook = os.getenv('TEAMS_WEBHOOK_URL')
+    if teams_webhook:
+        send_teams_notification(teams_webhook, programs_data, totals)
+    else:
+        print("ℹ️  TEAMS_WEBHOOK_URL not configured")
+
+    # Send email notification
+    if os.getenv('SMTP_HOST'):
+        smtp_config = {
+            'host': os.getenv('SMTP_HOST'),
+            'port': int(os.getenv('SMTP_PORT', 587)),
+            'username': os.getenv('SMTP_USERNAME'),
+            'password': os.getenv('SMTP_PASSWORD'),
+            'from_address': os.getenv('SMTP_FROM'),
+            'to_address': os.getenv('SMTP_TO', '').split(','),
+            'use_tls': os.getenv('SMTP_USE_TLS', 'true').lower() == 'true'
+        }
+        send_email_notification(smtp_config, programs_data, totals, results_dir)
+    else:
+        print("ℹ️  Email notification not configured")
+
+    print("\n✅ Notification process completed")
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

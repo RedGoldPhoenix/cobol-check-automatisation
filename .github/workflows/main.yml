@@ -7,31 +7,31 @@ on:
 jobs:
   cobol-check:
     runs-on: ubuntu-latest  # GitHub Actions n'a pas de runner fedora-latest officiel
-    
+
     steps:
       - uses: actions/checkout@v4
-      
+
       - name: Set up Java 21
         uses: actions/setup-java@v4
         with:
           java-version: '21'
           distribution: 'temurin'
-      
+
       - name: Verify Java installation
         run: java --version
-        
+
       - name: Install Zowe CLI
         run: |
           npm install -g @zowe/cli@latest
           zowe --version
-      
+
       - name: Setup Mainframe Environment and Upload COBOL Check
         env:
           ZOWE_OPT_HOST: 204.90.115.200
           ZOWE_OPT_PORT: 10443
           ZOWE_OPT_USER: ${{ secrets.ZOWE_USERNAME }}
           ZOWE_OPT_PASSWORD: ${{ secrets.ZOWE_PASSWORD }}
-          ZOWE_OPT_REJECT_UNAUTHORIZED: false 
+          ZOWE_OPT_REJECT_UNAUTHORIZED: false
           ZOWE_USERNAME: ${{ secrets.ZOWE_USERNAME }}
           ZOWE_PASSWORD: ${{ secrets.ZOWE_PASSWORD }}
         run: |
@@ -50,3 +50,46 @@ jobs:
         run: |
           chmod +x .github/scripts/mainframe_operations.sh
           .github/scripts/mainframe_operations.sh
+
+      - name: Generate HTML Report
+        if: always()
+        run: |
+          python3 .github/scripts/generate_report.py cobol-check/../test-results
+
+      - name: Analyze Advanced Metrics
+        if: always()
+        run: |
+          python3 .github/scripts/analyze_metrics.py cobol-check/../test-results
+
+      - name: Validate Results Against Thresholds
+        if: always()
+        env:
+          COVERAGE_THRESHOLD: 75
+          QUALITY_THRESHOLD: 70
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: |
+          python3 .github/scripts/validate_results.py cobol-check/../test-results
+
+      - name: Send Notifications
+        if: always()
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+          TEAMS_WEBHOOK_URL: ${{ secrets.TEAMS_WEBHOOK_URL }}
+          SMTP_HOST: ${{ secrets.SMTP_HOST }}
+          SMTP_PORT: ${{ secrets.SMTP_PORT }}
+          SMTP_USERNAME: ${{ secrets.SMTP_USERNAME }}
+          SMTP_PASSWORD: ${{ secrets.SMTP_PASSWORD }}
+          SMTP_FROM: ${{ secrets.SMTP_FROM }}
+          SMTP_TO: ${{ secrets.SMTP_TO }}
+        run: |
+          python3 .github/scripts/send_notifications.py cobol-check/../test-results
+
+      - name: Upload Test Results as Artifacts
+        if: always()
+        uses: actions/upload-artifact@v3
+        with:
+          name: cobol-check-results
+          path: |
+            test-results/
+            cobol-check/testruns/

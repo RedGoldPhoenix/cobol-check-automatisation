@@ -231,10 +231,15 @@ for program in NUMBERS EMPPAY DEPTPAY; do
     echo "" >> ../test-results/SUMMARY.txt
     cat "../test-results/${program}_results.txt" >> ../test-results/SUMMARY.txt
 
-    # Extract metrics for overall calculation
-    total_tests=$(grep "Total Test Cases:" "../test-results/${program}_results.txt" | awk '{print $NF}')
-    passed=$(grep "Tests Passed:" "../test-results/${program}_results.txt" | awk '{print $NF}')
-    failed=$(grep "Tests Failed:" "../test-results/${program}_results.txt" | awk '{print $NF}' | sed 's/(.*//')
+    # Extract metrics for overall calculation - extract only numbers before any parenthesis
+    total_tests=$(grep "Total Test Cases:" "../test-results/${program}_results.txt" | grep -oP '\d+' | head -1)
+    passed=$(grep "Tests Passed:" "../test-results/${program}_results.txt" | grep -oP '\d+' | head -1)
+    failed=$(grep "Tests Failed:" "../test-results/${program}_results.txt" | grep -oP '\d+' | head -1)
+
+    # Ensure variables are integers, default to 0 if empty
+    total_tests=${total_tests:-0}
+    passed=${passed:-0}
+    failed=${failed:-0}
 
     total_all_tests=$((total_all_tests + total_tests))
     total_all_passed=$((total_all_passed + passed))
