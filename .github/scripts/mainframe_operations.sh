@@ -12,7 +12,7 @@ ZOWE_USERNAME="Z15007" # Replace with the actual username
 # where I'm ?
 pwd
 # Change to the cobol-check directory
-cd cobolcheck echo "Changed to $(pwd)" ls -al
+cd cobolcheck
 echo "Changed to $(pwd)"
 ls -al
 # Make cobol-check executable
