@@ -9,8 +9,6 @@ java -version
 # Set ZOWE_USERNAME
 ZOWE_USERNAME="Z15007" # Replace with the actual username
 
-# where I'm ?
-pwd
 # Change to the cobol-check directory
 cd cobol-check
 echo "Changed to $(pwd)"
@@ -18,11 +16,13 @@ ls -al
 # cobol-check is a JAR file, not an executable script
 # We'll call it via java -jar
 echo "cobol-check JAR found in bin/ directory"
+
 # Make script in scripts directory executable
 cd scripts
 chmod +x linux_gnucobol_run_tests
 echo "Made linux_gnucobol_run_tests executable"
 cd ..
+
 # Function to run cobol-check and copy files
 run_cobolcheck() {
 program=$1
@@ -52,8 +52,9 @@ else
   echo "${program}.JCL not found"
 fi
 }
+
 # Run for each program (only those that exist)
-for program in NUMBERS ALPHA; do
+for program in NUMBERS EMPPAY DEPTPAY; do
   run_cobolcheck $program
 done
 echo "Mainframe operations completed"
