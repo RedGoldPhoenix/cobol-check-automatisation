@@ -30,16 +30,16 @@ echo "Running cobol-check for $program"
 # Run cobol-check, but don't exit if it fails
 java -jar bin/cobol-check-0.2.19.jar -p $program
 echo "cobol-check execution completed for $program (exceptions may have occurred)"
-# Check if CC##99.CBL was created, regardless of cobol-check exit status
-if [ -f "CC##99.CBL" ]; then
+# Check if CC##99.CBL was created in testruns/, regardless of cobol-check exit status
+if [ -f "testruns/CC##99.CBL" ]; then
   # Copy to the MVS dataset
-  if cp CC##99.CBL "//'${ZOWE_USERNAME}.CBL($program)'"; then
-    echo "Copied CC##99.CBL to ${ZOWE_USERNAME}.CBL($program)"
+  if cp testruns/CC##99.CBL "//'${ZOWE_USERNAME}.CBL($program)'"; then
+    echo "Copied testruns/CC##99.CBL to ${ZOWE_USERNAME}.CBL($program)"
   else
-    echo "Failed to copy CC##99.CBL to ${ZOWE_USERNAME}.CBL($program)"
+    echo "Failed to copy testruns/CC##99.CBL to ${ZOWE_USERNAME}.CBL($program)"
   fi
 else
-  echo "CC##99.CBL not found for $program"
+  echo "CC##99.CBL not found in testruns/ for $program"
 fi
 # Copy the JCL file if it exists
 if [ -f "${program}.JCL" ]; then
@@ -52,8 +52,8 @@ else
   echo "${program}.JCL not found"
 fi
 }
-# Run for each program
-for program in NUMBERS EMPPAY DEPTPAY; do
+# Run for each program (only those that exist)
+for program in NUMBERS ALPHA; do
   run_cobolcheck $program
 done
 echo "Mainframe operations completed"
