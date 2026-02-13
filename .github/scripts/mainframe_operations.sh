@@ -113,15 +113,32 @@ submit_and_monitor_jcl() {
   if [ $? -eq 0 ] && [ ! -z "$job_id" ]; then
     echo "JCL submitted successfully. Job ID: $job_id"
 
-    # Wait for job completion (with 5 minute timeout)
+    # Poll for job completion (max 30 attempts, 10 seconds each = 5 minutes)
     echo "Waiting for job $job_id to complete..."
-    if zowe jobs wait-for-job "$job_id" --timeout 300; then
-      echo "Job $job_id completed successfully"
+    local max_attempts=30
+    local attempt=0
+    local job_complete=false
 
-      # Retrieve job status
+    while [ $attempt -lt $max_attempts ]; do
+      sleep 10
+      attempt=$((attempt + 1))
+
+      # Check job status
       local job_status=$(zowe jobs view job "$job_id" --rff status --rft string 2>&1)
-      echo "Job Status: $job_status"
 
+      if [ $? -eq 0 ]; then
+        echo "Job status: $job_status (attempt $attempt/$max_attempts)"
+
+        # Check if job has completed (status would be something like "OUTPUT" or similar)
+        if [[ "$job_status" != "ACTIVE" && "$job_status" != "" ]]; then
+          job_complete=true
+          echo "Job $job_id completed with status: $job_status"
+          break
+        fi
+      fi
+    done
+
+    if [ "$job_complete" = true ]; then
       # Retrieve SYSOUT
       local sysout_file="../test-results/${program}_${job_id}.sysout"
       echo "Retrieving SYSOUT..."
@@ -140,7 +157,14 @@ submit_and_monitor_jcl() {
         return 1
       fi
     else
-      echo "Job $job_id did not complete within timeout period"
+      echo "Job $job_id did not complete within 5 minute timeout period"
+      # Still try to retrieve SYSOUT even if job might still be running
+      local sysout_file="../test-results/${program}_${job_id}.sysout"
+      echo "Attempting to retrieve partial SYSOUT..."
+      if zowe jobs view output "$job_id" > "$sysout_file" 2>&1; then
+        echo "Partial SYSOUT retrieved. Job may still be running."
+        parse_test_results "$sysout_file" "$program"
+      fi
       return 1
     fi
   else
@@ -221,8 +245,14 @@ for program in NUMBERS EMPPAY DEPTPAY; do
   fi
 done
 
-# Add overall summary
-cat >> ../test-results/SUMMARY.txt << SUMMARY_EOF
+# Calculate overall quality score
+overall_quality=0
+if [ "$total_all_tests" -gt 0 ]; then
+  overall_quality=$(( (total_all_passed * 100) / total_all_tests ))
+fi
+
+# Add overall summary (using cat without here-document to avoid syntax issues)
+cat >> ../test-results/SUMMARY.txt << EOF
 
 ================================================================================
 OVERALL METRICS
@@ -232,7 +262,7 @@ Total Tests Passed: $total_all_passed
 Total Tests Failed: $total_all_failed
 
 Overall Code Coverage: 100%
-Overall Test Quality: $([ "$total_all_tests" -gt 0 ] && echo "$((($total_all_passed * 100) / $total_all_tests))" || echo "0")%
+Overall Test Quality: ${overall_quality}%
 ================================================================================
 EOF
 
